@@ -79,7 +79,7 @@ export const CardItem = ({
   rotateZ = 0,
   ...rest
 }: {
-  as?: React.ElementType;
+  as?: string | React.ComponentType<any>;
   children: React.ReactNode;
   className?: string;
   translateX?: number | string;
@@ -88,7 +88,7 @@ export const CardItem = ({
   rotateX?: number | string;
   rotateY?: number | string;
   rotateZ?: number | string;
-}) => {
+} & React.HTMLAttributes<HTMLElement>) => {
   const { width, height } = useContext(CardContext);
   const x = typeof translateX === "number" ? translateX : 0;
   const y = typeof translateY === "number" ? translateY : 0;
@@ -97,16 +97,16 @@ export const CardItem = ({
   const ry = typeof rotateY === "number" ? rotateY : 0;
   const rz = typeof rotateZ === "number" ? rotateZ : 0;
 
-  return (
-    <Tag
-      className={cn("w-fit transition-transform duration-200 ease-out", className)}
-      style={{
+  return React.createElement(
+    Tag as string | React.ComponentType<any>,
+    {
+      className: cn("w-fit transition-transform duration-200 ease-out", className),
+      style: {
         transformStyle: "preserve-3d",
         transform: `translateX(${x}px) translateY(${y}px) translateZ(${z}px) rotateX(${rx}deg) rotateY(${ry}deg) rotateZ(${rz}deg)`,
-      }}
-      {...rest}
-    >
-      {children}
-    </Tag>
+      },
+      ...rest,
+    },
+    children
   );
 };
