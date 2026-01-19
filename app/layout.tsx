@@ -3,8 +3,13 @@ import './globals.css'
 import { Providers } from './providers'
 
 export const metadata: Metadata = {
-  title: 'Engineer Alpha | AI Risk & Entry Point Tool',
+  title: 'Buy Now AI | AI Risk & Entry Point Tool',
   description: 'Enter a stock ticker, AI automatically generates: recommended actions, risk levels, batch entry zones, and add-on positions.',
+  icons: {
+    apple: '/logo.png',
+    icon: '/logo.png', 
+    shortcut: '/logo.png'
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
