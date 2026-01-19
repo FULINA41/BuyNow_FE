@@ -24,7 +24,7 @@ import {
   InputGroupText,
   InputGroupTextarea,
 } from "@/components/ui/input-group"
-import { SearchIcon } from 'lucide-react';
+import { SearchIcon, Github } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function StockAnalyzer() {
@@ -62,7 +62,7 @@ export default function StockAnalyzer() {
     <div className="max-w-6xl mx-auto p-6 space-y-6 relative z-20">
       <Card>
         <CardHeader>
-          <CardTitle className="text-center">Engineer Alpha Risk Level & Entry Zones</CardTitle>
+          <CardTitle className="text-center">BuyNow AI <a href='https://github.com/FULINA41/BuyNow' target='_blank' rel='noopener noreferrer'><Github size={16} /></a></CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
