@@ -3,8 +3,7 @@
  */
 'use client';
 
-import { useState, useEffect } from 'react';
-import { flushSync } from 'react-dom';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { AnalysisResponse, InvestmentMode } from '@/lib/types';
@@ -41,6 +40,38 @@ export default function StockAnalyzer() {
   const [llmError, setLlmError] = useState<string | null>(null);
   const [llmResult, setLlmResult] = useState('');
   const [llmStreaming, setLlmStreaming] = useState(false);
+  const chunksRef = useRef<string[]>([]);
+  const chunkIndexRef = useRef(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const stopAnimation = useCallback(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+  }, []);
+
+  const startAnimation = useCallback(() => {
+    stopAnimation();
+    chunkIndexRef.current = 0;
+    setLlmResult('');
+    setLlmStreaming(true);
+
+    timerRef.current = setInterval(() => {
+      const chunks = chunksRef.current;
+      const idx = chunkIndexRef.current;
+      if (idx >= chunks.length) {
+        stopAnimation();
+        setLlmStreaming(false);
+        setLlmLoading(false);
+        return;
+      }
+      setLlmResult((prev) => prev + chunks[idx]);
+      chunkIndexRef.current = idx + 1;
+    }, 30);
+  }, [stopAnimation]);
+
+  useEffect(() => stopAnimation, [stopAnimation]);
 
   // #region agent log
   useEffect(() => {
@@ -82,7 +113,7 @@ export default function StockAnalyzer() {
     setLlmLoading(true);
     setLlmError(null);
     setLlmResult('');
-    setLlmStreaming(true);
+    stopAnimation();
     try {
       const allChunks: string[] = [];
       for await (const chunk of fetchLLMAnalysis({
@@ -92,14 +123,10 @@ export default function StockAnalyzer() {
       })) {
         allChunks.push(chunk);
       }
-      for (let i = 0; i < allChunks.length; i++) {
-        flushSync(() => setLlmResult((prev) => prev + allChunks[i]));
-        await new Promise((r) => setTimeout(r, 20));
-      }
+      chunksRef.current = allChunks;
+      startAnimation();
     } catch (err) {
       setLlmError(err instanceof Error ? err.message : 'LLM analysis failed, please try again');
-    } finally {
-      setLlmStreaming(false);
       setLlmLoading(false);
     }
   };
