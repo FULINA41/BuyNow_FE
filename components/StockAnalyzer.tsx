@@ -40,6 +40,7 @@ export default function StockAnalyzer() {
   const [llmLoading, setLlmLoading] = useState(false);
   const [llmError, setLlmError] = useState<string | null>(null);
   const [llmResult, setLlmResult] = useState('');
+  const [llmStreaming, setLlmStreaming] = useState(false);
 
   // #region agent log
   useEffect(() => {
@@ -81,31 +82,24 @@ export default function StockAnalyzer() {
     setLlmLoading(true);
     setLlmError(null);
     setLlmResult('');
+    setLlmStreaming(true);
     try {
-      let chunkCount = 0;
+      const allChunks: string[] = [];
       for await (const chunk of fetchLLMAnalysis({
         ticker: ticker.trim().toUpperCase(),
         years,
         mode,
       })) {
-        chunkCount += 1;
-        if (typeof console !== 'undefined' && console.log) console.log('[LLM received]', chunkCount, { len: chunk?.length, preview: String(chunk).slice(0, 60) });
-        // #region agent log
-        fetch('http://127.0.0.1:7537/ingest/8dfb01be-c204-46a4-b56d-eb7b9f35fb9f',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'fc746e'},body:JSON.stringify({sessionId:'fc746e',location:'StockAnalyzer.tsx:for-await',message:'chunk received',data:{chunkCount,chunkLen:chunk?.length,chunkPreview:String(chunk).slice(0,60)},timestamp:Date.now(),hypothesisId:'H3'})}).catch(()=>{});
-        // #endregion
-        flushSync(() => setLlmResult((prev) => prev + chunk));
-        await new Promise((r) => requestAnimationFrame(r));
+        allChunks.push(chunk);
       }
-      if (typeof console !== 'undefined' && console.log) console.log('[LLM stream done]', { totalChunks: chunkCount });
-      // #region agent log
-      fetch('http://127.0.0.1:7537/ingest/8dfb01be-c204-46a4-b56d-eb7b9f35fb9f',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'fc746e'},body:JSON.stringify({sessionId:'fc746e',location:'StockAnalyzer.tsx:stream-done',message:'stream finished',data:{chunkCount},timestamp:Date.now(),hypothesisId:'H3'})}).catch(()=>{});
-      // #endregion
+      for (let i = 0; i < allChunks.length; i++) {
+        flushSync(() => setLlmResult((prev) => prev + allChunks[i]));
+        await new Promise((r) => setTimeout(r, 20));
+      }
     } catch (err) {
-      // #region agent log
-      fetch('http://127.0.0.1:7537/ingest/8dfb01be-c204-46a4-b56d-eb7b9f35fb9f',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'fc746e'},body:JSON.stringify({sessionId:'fc746e',location:'StockAnalyzer.tsx:catch',message:'handleLLMAnalysis error',data:{errMsg:err instanceof Error ? err.message : String(err)},timestamp:Date.now(),hypothesisId:'H3'})}).catch(()=>{});
-      // #endregion
       setLlmError(err instanceof Error ? err.message : 'LLM analysis failed, please try again');
     } finally {
+      setLlmStreaming(false);
       setLlmLoading(false);
     }
   };
@@ -203,8 +197,14 @@ export default function StockAnalyzer() {
             </div>
           )}
           {llmResult !== '' && (
-            <div className="mt-4 rounded-lg border bg-muted p-4 prose prose-invert prose-sm max-w-none">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{llmResult}</ReactMarkdown>
+            <div className="mt-4 rounded-lg border bg-muted p-4">
+              {llmStreaming ? (
+                <pre className="text-foreground text-sm whitespace-pre-wrap font-sans">{llmResult}</pre>
+              ) : (
+                <div className="prose prose-invert prose-sm max-w-none">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{llmResult}</ReactMarkdown>
+                </div>
+              )}
             </div>
           )}
         </CardContent>
