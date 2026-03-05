@@ -42,6 +42,7 @@ export default function StockAnalyzer() {
   const [llmStreaming, setLlmStreaming] = useState(false);
   const chunksRef = useRef<string[]>([]);
   const chunkIndexRef = useRef(0);
+  const doneRef = useRef(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const stopAnimation = useCallback(() => {
@@ -53,21 +54,22 @@ export default function StockAnalyzer() {
 
   const startAnimation = useCallback(() => {
     stopAnimation();
+    chunksRef.current = [];
     chunkIndexRef.current = 0;
+    doneRef.current = false;
     setLlmResult('');
     setLlmStreaming(true);
 
     timerRef.current = setInterval(() => {
-      const chunks = chunksRef.current;
       const idx = chunkIndexRef.current;
-      if (idx >= chunks.length) {
+      if (idx < chunksRef.current.length) {
+        setLlmResult((prev) => prev + chunksRef.current[idx]);
+        chunkIndexRef.current = idx + 1;
+      } else if (doneRef.current) {
         stopAnimation();
         setLlmStreaming(false);
         setLlmLoading(false);
-        return;
       }
-      setLlmResult((prev) => prev + chunks[idx]);
-      chunkIndexRef.current = idx + 1;
     }, 30);
   }, [stopAnimation]);
 
@@ -112,21 +114,21 @@ export default function StockAnalyzer() {
     // #endregion
     setLlmLoading(true);
     setLlmError(null);
-    setLlmResult('');
-    stopAnimation();
+    startAnimation();
     try {
-      const allChunks: string[] = [];
       for await (const chunk of fetchLLMAnalysis({
         ticker: ticker.trim().toUpperCase(),
         years,
         mode,
       })) {
-        allChunks.push(chunk);
+        chunksRef.current.push(chunk);
       }
-      chunksRef.current = allChunks;
-      startAnimation();
+      doneRef.current = true;
     } catch (err) {
+      doneRef.current = true;
       setLlmError(err instanceof Error ? err.message : 'LLM analysis failed, please try again');
+      stopAnimation();
+      setLlmStreaming(false);
       setLlmLoading(false);
     }
   };
