@@ -94,6 +94,7 @@ export default function StockAnalyzer() {
         fetch('http://127.0.0.1:7537/ingest/8dfb01be-c204-46a4-b56d-eb7b9f35fb9f',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'fc746e'},body:JSON.stringify({sessionId:'fc746e',location:'StockAnalyzer.tsx:for-await',message:'chunk received',data:{chunkCount,chunkLen:chunk?.length,chunkPreview:String(chunk).slice(0,60)},timestamp:Date.now(),hypothesisId:'H3'})}).catch(()=>{});
         // #endregion
         flushSync(() => setLlmResult((prev) => prev + chunk));
+        await new Promise((r) => requestAnimationFrame(r));
       }
       if (typeof console !== 'undefined' && console.log) console.log('[LLM stream done]', { totalChunks: chunkCount });
       // #region agent log
