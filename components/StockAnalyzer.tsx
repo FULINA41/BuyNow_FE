@@ -226,14 +226,8 @@ export default function StockAnalyzer() {
             </div>
           )}
           {llmResult !== '' && (
-            <div className="mt-4 rounded-lg border bg-muted p-4">
-              {llmStreaming ? (
-                <pre className="text-foreground text-sm whitespace-pre-wrap font-sans">{llmResult}</pre>
-              ) : (
-                <div className="prose prose-invert prose-sm max-w-none">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{llmResult}</ReactMarkdown>
-                </div>
-              )}
+            <div className="mt-4 rounded-lg border bg-muted p-4 prose prose-invert prose-sm max-w-none">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{llmResult}</ReactMarkdown>
             </div>
           )}
         </CardContent>
