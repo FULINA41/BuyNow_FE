@@ -5,7 +5,7 @@
 
 import { useState } from 'react';
 import { AnalysisResponse, InvestmentMode } from '@/lib/types';
-import { analyzeStock } from '@/lib/api';
+import { analyzeStock, fetchLLMAnalysis } from '@/lib/api';
 import SignalCard from './SignalCard';
 import RiskBadge from './RiskBadge';
 import BuyZones from './BuyZones';
@@ -34,6 +34,9 @@ export default function StockAnalyzer() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AnalysisResponse | null>(null);
+  const [llmLoading, setLlmLoading] = useState(false);
+  const [llmError, setLlmError] = useState<string | null>(null);
+  const [llmResult, setLlmResult] = useState('');
 
   const handleAnalyze = async () => {
     if (!ticker.trim()) {
@@ -55,6 +58,29 @@ export default function StockAnalyzer() {
       setError(err instanceof Error ? err.message : 'Analysis failed, please try again');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleLLMAnalysis = async () => {
+    if (!ticker.trim()) {
+      setLlmError('Ticker cannot be empty');
+      return;
+    }
+    setLlmLoading(true);
+    setLlmError(null);
+    setLlmResult('');
+    try {
+      for await (const chunk of fetchLLMAnalysis({
+        ticker: ticker.trim().toUpperCase(),
+        years,
+        mode,
+      })) {
+        setLlmResult((prev) => prev + chunk);
+      }
+    } catch (err) {
+      setLlmError(err instanceof Error ? err.message : 'LLM analysis failed, please try again');
+    } finally {
+      setLlmLoading(false);
     }
   };
 
@@ -128,6 +154,31 @@ export default function StockAnalyzer() {
           {error && (
             <div className="mt-4 rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-destructive">
               {error}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>LLM Based Analysis</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Button
+            onClick={handleLLMAnalysis}
+            disabled={llmLoading}
+            className="w-full relative z-30 hover:bg-white/60 active:text-white"
+          >
+            {llmLoading ? 'Generating...' : 'Generating LLM Based Analysis'}
+          </Button>
+          {llmError && (
+            <div className="mt-4 rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-destructive">
+              {llmError}
+            </div>
+          )}
+          {llmResult !== '' && (
+            <div className="mt-4 rounded-lg border bg-muted p-4">
+              <pre className="text-foreground text-sm whitespace-pre-wrap font-sans">{llmResult}</pre>
             </div>
           )}
         </CardContent>

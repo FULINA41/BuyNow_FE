@@ -73,3 +73,7 @@ export interface AnalysisResponse {
   fair_value: FairValueResponse;
   add_levels: AddLevelsResponse;
 }
+
+
+
+
