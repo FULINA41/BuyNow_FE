@@ -87,8 +87,15 @@ export async function* fetchLLMAnalysis(params: AnalysisRequest): AsyncGenerator
           if (typeof console !== 'undefined' && console.log) console.log('[LLM chunk raw]', { len: data.length, preview: String(data).slice(0, 80) });
           yield data;
         }
+      } else {
+        if (typeof console !== 'undefined' && console.log) console.log('[LLM plaintext]', { len: line.length, preview: line.slice(0, 80) });
+        yield line + '\n';
       }
     }
+  }
+  if (buffer.trim()) {
+    if (typeof console !== 'undefined' && console.log) console.log('[LLM plaintext tail]', { len: buffer.length, preview: buffer.slice(0, 80) });
+    yield buffer;
   }
   if (typeof console !== 'undefined' && console.log) console.log('[LLM] stream loop ended, no more reads');
 }
