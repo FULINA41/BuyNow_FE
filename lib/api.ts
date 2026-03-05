@@ -38,8 +38,13 @@ export async function* fetchLLMAnalysis(params: AnalysisRequest): AsyncGenerator
 
   let buffer = ''; // 用于处理可能被截断的 SSE 帧
 
+  let readCount = 0;
   while (true) {
     const { done, value } = await reader.read();
+    readCount += 1;
+    // #region agent log
+    if (readCount <= 2) fetch('http://127.0.0.1:7537/ingest/8dfb01be-c204-46a4-b56d-eb7b9f35fb9f',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'fc746e'},body:JSON.stringify({sessionId:'fc746e',location:'api.ts:reader.read',message:'read chunk',data:{readCount,done,valueLen:value?.length},timestamp:Date.now(),hypothesisId:'H1'})}).catch(()=>{});
+    // #endregion
     if (done) break;
 
     // 将当前的二进制块解码并拼接到缓存中
@@ -55,6 +60,10 @@ export async function* fetchLLMAnalysis(params: AnalysisRequest): AsyncGenerator
       const trimmedLine = line.trim();
       if (!trimmedLine) continue; // 跳过空行
 
+      // #region agent log
+      fetch('http://127.0.0.1:7537/ingest/8dfb01be-c204-46a4-b56d-eb7b9f35fb9f',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'fc746e'},body:JSON.stringify({sessionId:'fc746e',location:'api.ts:SSE-line',message:'SSE line',data:{startsWithData:trimmedLine.startsWith('data: '),linePreview:trimmedLine.slice(0,120)},timestamp:Date.now(),hypothesisId:'H1'})}).catch(()=>{});
+      // #endregion
+
       // 如果后端返回的是标准 SSE 格式: "data: {"text": "hello"}"
       if (trimmedLine.startsWith('data: ')) {
         const data = trimmedLine.replace('data: ', '');
@@ -65,7 +74,11 @@ export async function* fetchLLMAnalysis(params: AnalysisRequest): AsyncGenerator
         try {
           // 如果后端返回的是 JSON 字符串，解析它
           const parsed = JSON.parse(data);
-          yield parsed.content || parsed.text || ''; 
+          const chunk = parsed.content || parsed.text || '';
+          // #region agent log
+          fetch('http://127.0.0.1:7537/ingest/8dfb01be-c204-46a4-b56d-eb7b9f35fb9f',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'fc746e'},body:JSON.stringify({sessionId:'fc746e',location:'api.ts:yield',message:'yielding chunk',data:{chunkLen:chunk.length,chunkPreview:String(chunk).slice(0,80),hasContent:!!parsed.content,hasText:!!parsed.text,parsedKeys:Object.keys(parsed)},timestamp:Date.now(),hypothesisId:'H2'})}).catch(()=>{});
+          // #endregion
+          yield chunk;
         } catch (e) {
           // 如果后端直接返回的是纯文本内容
           yield data;

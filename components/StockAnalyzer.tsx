@@ -3,7 +3,7 @@
  */
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AnalysisResponse, InvestmentMode } from '@/lib/types';
 import { analyzeStock, fetchLLMAnalysis } from '@/lib/api';
 import SignalCard from './SignalCard';
@@ -38,6 +38,12 @@ export default function StockAnalyzer() {
   const [llmError, setLlmError] = useState<string | null>(null);
   const [llmResult, setLlmResult] = useState('');
 
+  // #region agent log
+  useEffect(() => {
+    fetch('http://127.0.0.1:7537/ingest/8dfb01be-c204-46a4-b56d-eb7b9f35fb9f',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'fc746e'},body:JSON.stringify({sessionId:'fc746e',location:'StockAnalyzer.tsx:useEffect-llmResult',message:'llmResult state',data:{llmResultLen:llmResult.length,showBlock:llmResult !== ''},timestamp:Date.now(),hypothesisId:'H4'})}).catch(()=>{});
+  }, [llmResult]);
+  // #endregion
+
   const handleAnalyze = async () => {
     if (!ticker.trim()) {
       setError('Ticker cannot be empty');
@@ -66,18 +72,32 @@ export default function StockAnalyzer() {
       setLlmError('Ticker cannot be empty');
       return;
     }
+    // #region agent log
+    fetch('http://127.0.0.1:7537/ingest/8dfb01be-c204-46a4-b56d-eb7b9f35fb9f',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'fc746e'},body:JSON.stringify({sessionId:'fc746e',location:'StockAnalyzer.tsx:handleLLMAnalysis',message:'handler entry',data:{ticker:ticker.trim()},timestamp:Date.now(),hypothesisId:'H3'})}).catch(()=>{});
+    // #endregion
     setLlmLoading(true);
     setLlmError(null);
     setLlmResult('');
     try {
+      let chunkCount = 0;
       for await (const chunk of fetchLLMAnalysis({
         ticker: ticker.trim().toUpperCase(),
         years,
         mode,
       })) {
+        chunkCount += 1;
+        // #region agent log
+        fetch('http://127.0.0.1:7537/ingest/8dfb01be-c204-46a4-b56d-eb7b9f35fb9f',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'fc746e'},body:JSON.stringify({sessionId:'fc746e',location:'StockAnalyzer.tsx:for-await',message:'chunk received',data:{chunkCount,chunkLen:chunk?.length,chunkPreview:String(chunk).slice(0,60)},timestamp:Date.now(),hypothesisId:'H3'})}).catch(()=>{});
+        // #endregion
         setLlmResult((prev) => prev + chunk);
       }
+      // #region agent log
+      fetch('http://127.0.0.1:7537/ingest/8dfb01be-c204-46a4-b56d-eb7b9f35fb9f',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'fc746e'},body:JSON.stringify({sessionId:'fc746e',location:'StockAnalyzer.tsx:stream-done',message:'stream finished',data:{chunkCount},timestamp:Date.now(),hypothesisId:'H3'})}).catch(()=>{});
+      // #endregion
     } catch (err) {
+      // #region agent log
+      fetch('http://127.0.0.1:7537/ingest/8dfb01be-c204-46a4-b56d-eb7b9f35fb9f',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'fc746e'},body:JSON.stringify({sessionId:'fc746e',location:'StockAnalyzer.tsx:catch',message:'handleLLMAnalysis error',data:{errMsg:err instanceof Error ? err.message : String(err)},timestamp:Date.now(),hypothesisId:'H3'})}).catch(()=>{});
+      // #endregion
       setLlmError(err instanceof Error ? err.message : 'LLM analysis failed, please try again');
     } finally {
       setLlmLoading(false);
