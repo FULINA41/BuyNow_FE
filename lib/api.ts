@@ -78,9 +78,11 @@ export async function* fetchLLMAnalysis(params: AnalysisRequest): AsyncGenerator
           // #region agent log
           fetch('http://127.0.0.1:7537/ingest/8dfb01be-c204-46a4-b56d-eb7b9f35fb9f',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'fc746e'},body:JSON.stringify({sessionId:'fc746e',location:'api.ts:yield',message:'yielding chunk',data:{chunkLen:chunk.length,chunkPreview:String(chunk).slice(0,80),hasContent:!!parsed.content,hasText:!!parsed.text,parsedKeys:Object.keys(parsed)},timestamp:Date.now(),hypothesisId:'H2'})}).catch(()=>{});
           // #endregion
+          if (typeof console !== 'undefined' && console.log) console.log('[LLM chunk]', { len: chunk.length, preview: String(chunk).slice(0, 80) });
           yield chunk;
         } catch (e) {
           // 如果后端直接返回的是纯文本内容
+          if (typeof console !== 'undefined' && console.log) console.log('[LLM chunk raw]', { len: data.length, preview: String(data).slice(0, 80) });
           yield data;
         }
       }

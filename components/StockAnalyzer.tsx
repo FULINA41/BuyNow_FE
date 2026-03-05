@@ -86,11 +86,13 @@ export default function StockAnalyzer() {
         mode,
       })) {
         chunkCount += 1;
+        if (typeof console !== 'undefined' && console.log) console.log('[LLM received]', chunkCount, { len: chunk?.length, preview: String(chunk).slice(0, 60) });
         // #region agent log
         fetch('http://127.0.0.1:7537/ingest/8dfb01be-c204-46a4-b56d-eb7b9f35fb9f',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'fc746e'},body:JSON.stringify({sessionId:'fc746e',location:'StockAnalyzer.tsx:for-await',message:'chunk received',data:{chunkCount,chunkLen:chunk?.length,chunkPreview:String(chunk).slice(0,60)},timestamp:Date.now(),hypothesisId:'H3'})}).catch(()=>{});
         // #endregion
         setLlmResult((prev) => prev + chunk);
       }
+      if (typeof console !== 'undefined' && console.log) console.log('[LLM stream done]', { totalChunks: chunkCount });
       // #region agent log
       fetch('http://127.0.0.1:7537/ingest/8dfb01be-c204-46a4-b56d-eb7b9f35fb9f',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'fc746e'},body:JSON.stringify({sessionId:'fc746e',location:'StockAnalyzer.tsx:stream-done',message:'stream finished',data:{chunkCount},timestamp:Date.now(),hypothesisId:'H3'})}).catch(()=>{});
       // #endregion
