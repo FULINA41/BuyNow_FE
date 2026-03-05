@@ -4,6 +4,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { flushSync } from 'react-dom';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { AnalysisResponse, InvestmentMode } from '@/lib/types';
 import { analyzeStock, fetchLLMAnalysis } from '@/lib/api';
 import SignalCard from './SignalCard';
@@ -90,7 +93,7 @@ export default function StockAnalyzer() {
         // #region agent log
         fetch('http://127.0.0.1:7537/ingest/8dfb01be-c204-46a4-b56d-eb7b9f35fb9f',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'fc746e'},body:JSON.stringify({sessionId:'fc746e',location:'StockAnalyzer.tsx:for-await',message:'chunk received',data:{chunkCount,chunkLen:chunk?.length,chunkPreview:String(chunk).slice(0,60)},timestamp:Date.now(),hypothesisId:'H3'})}).catch(()=>{});
         // #endregion
-        setLlmResult((prev) => prev + chunk);
+        flushSync(() => setLlmResult((prev) => prev + chunk));
       }
       if (typeof console !== 'undefined' && console.log) console.log('[LLM stream done]', { totalChunks: chunkCount });
       // #region agent log
@@ -199,8 +202,8 @@ export default function StockAnalyzer() {
             </div>
           )}
           {llmResult !== '' && (
-            <div className="mt-4 rounded-lg border bg-muted p-4">
-              <pre className="text-foreground text-sm whitespace-pre-wrap font-sans">{llmResult}</pre>
+            <div className="mt-4 rounded-lg border bg-muted p-4 prose prose-invert prose-sm max-w-none">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{llmResult}</ReactMarkdown>
             </div>
           )}
         </CardContent>
