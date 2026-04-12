@@ -74,6 +74,15 @@ export interface AnalysisResponse {
   add_levels: AddLevelsResponse;
 }
 
+export interface OptimizeRequest {
+  tickers: string[];
+  lookback_years?: number;
+  risk_free_rate?: number;
+}
 
-
-
+export interface OptimizeResponse {
+  weights: Record<string, number>;
+  expected_return: number;
+  volatility: number;
+  sharpe_ratio: number;
+}
