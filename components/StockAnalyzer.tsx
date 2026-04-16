@@ -6,11 +6,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { AnalysisResponse, InvestmentMode } from '@/lib/types';
-import { analyzeStock, fetchLLMAnalysis } from '@/lib/api';
+import { AnalysisResponse, InvestmentMode, PredictModel, PredictResponse } from '@/lib/types';
+import { analyzeStock, fetchLLMAnalysis, fetchPrediction } from '@/lib/api';
 import SignalCard from './SignalCard';
 import RiskBadge from './RiskBadge';
 import BuyZones from './BuyZones';
+import AlphaSignalPanel from './AlphaSignalPanel';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -41,6 +42,9 @@ export default function StockAnalyzer() {
   const [llmError, setLlmError] = useState<string | null>(null);
   const [llmResult, setLlmResult] = useState('');
   const [llmStreaming, setLlmStreaming] = useState(false);
+  const [predictModel, setPredictModel] = useState<PredictModel>('lgbm');
+  const [predictResult, setPredictResult] = useState<PredictResponse | null>(null);
+  const [predictError, setPredictError] = useState<string | null>(null);
   const chunksRef = useRef<string[]>([]);
   const chunkIndexRef = useRef(0);
   const doneRef = useRef(false);
@@ -88,21 +92,29 @@ export default function StockAnalyzer() {
       return;
     }
 
+    const upperTicker = ticker.trim().toUpperCase();
     setLoading(true);
     setError(null);
+    setPredictError(null);
 
-    try {
-      const data = await analyzeStock({
-        ticker: ticker.trim().toUpperCase(),
-        years,
-        mode,
-      });
-      setResult(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Analysis failed, please try again');
-    } finally {
-      setLoading(false);
+    const [analysisResult, predictionResult] = await Promise.allSettled([
+      analyzeStock({ ticker: upperTicker, years, mode }),
+      fetchPrediction(upperTicker, predictModel),
+    ]);
+
+    if (analysisResult.status === 'fulfilled') {
+      setResult(analysisResult.value);
+    } else {
+      setError(analysisResult.reason instanceof Error ? analysisResult.reason.message : 'Analysis failed, please try again');
     }
+
+    if (predictionResult.status === 'fulfilled') {
+      setPredictResult(predictionResult.value);
+    } else {
+      setPredictError(predictionResult.reason instanceof Error ? predictionResult.reason.message : 'ML prediction failed');
+    }
+
+    setLoading(false);
   };
 
   const handleLLMAnalysis = async () => {
@@ -142,7 +154,7 @@ export default function StockAnalyzer() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <InputGroup>
                   <InputGroupAddon>
@@ -166,6 +178,21 @@ export default function StockAnalyzer() {
                     <SelectItem value="conservative">Conservative</SelectItem>
                     <SelectItem value="standard">Standard (Recommended)</SelectItem>
                     <SelectItem value="aggressive">Aggressive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="relative z-30">
+                <Select
+                  value={predictModel}
+                  onValueChange={(value: string) => setPredictModel(value as PredictModel)}
+                >
+                  <SelectTrigger className="w-full relative z-30">
+                    <SelectValue placeholder="ML Model" />
+                  </SelectTrigger>
+                  <SelectContent className="z-[200]">
+                    <SelectItem value="lgbm">LightGBM</SelectItem>
+                    <SelectItem value="alphanet">AlphaNet</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -288,11 +315,22 @@ export default function StockAnalyzer() {
             </Card>
           </AnimatedCard>
 
-          <AnimatedCard delay={0.2}>
+          {predictResult && (
+            <AnimatedCard delay={0.15}>
+              <AlphaSignalPanel result={predictResult} />
+            </AnimatedCard>
+          )}
+          {predictError && (
+            <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-destructive">
+              ML Prediction: {predictError}
+            </div>
+          )}
+
+          <AnimatedCard delay={0.25}>
             <BuyZones zones={result.zones} mode={mode} />
           </AnimatedCard>
 
-          <AnimatedCard delay={0.3}>
+          <AnimatedCard delay={0.35}>
             <Card>
               <CardHeader>
                 <CardTitle>Add-on Positions (Operation Manual)</CardTitle>
@@ -329,7 +367,7 @@ export default function StockAnalyzer() {
             </Card>
           </AnimatedCard>
 
-          <AnimatedCard delay={0.4}>
+          <AnimatedCard delay={0.45}>
             <Card>
               <CardHeader>
                 <CardTitle>Why This Recommendation? (Plain Language Explanation)</CardTitle>
@@ -367,7 +405,7 @@ export default function StockAnalyzer() {
             </Card>
           </AnimatedCard>
 
-          <AnimatedCard delay={0.5}>
+          <AnimatedCard delay={0.55}>
             <Card>
               <CardContent>
                 <div className="rounded-lg border bg-muted p-4">

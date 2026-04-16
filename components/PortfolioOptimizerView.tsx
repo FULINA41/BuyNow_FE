@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { OptimizeResponse } from '@/lib/types';
+import { OptimizeResponse,InvestmentMode } from '@/lib/types';
 import { fetchOptimizedPortfolio } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

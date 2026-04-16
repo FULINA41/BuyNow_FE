@@ -86,3 +86,26 @@ export interface OptimizeResponse {
   volatility: number;
   sharpe_ratio: number;
 }
+
+export type PredictModel = "alphanet" | "lgbm";
+
+export interface AlphaNetResult {
+  model: "alphanet";
+  pred_return: number;
+  pred_direction: number;
+  pred_volatility: number;
+  ticker: string;
+  seq_len: number;
+  data_points: number;
+}
+
+export interface LgbmResult {
+  model: "lgbm";
+  pred_return: number;
+  top_features: { feature: string; gain: number }[];
+  ticker: string;
+  seq_len: number;
+  data_points: number;
+}
+
+export type PredictResponse = AlphaNetResult | LgbmResult;
