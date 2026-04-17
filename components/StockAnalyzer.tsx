@@ -11,6 +11,7 @@ import { analyzeStock, fetchLLMAnalysis, fetchPrediction } from '@/lib/api';
 import SignalCard from './SignalCard';
 import RiskBadge from './RiskBadge';
 import BuyZones from './BuyZones';
+import ValuationCard from './ValuationCard';
 import AlphaSignalPanel from './AlphaSignalPanel';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -325,6 +326,13 @@ export default function StockAnalyzer() {
               ML Prediction: {predictError}
             </div>
           )}
+
+          <AnimatedCard delay={0.2}>
+            <ValuationCard
+              fundamentals={result.fundamentals}
+              fairValue={result.fair_value}
+            />
+          </AnimatedCard>
 
           <AnimatedCard delay={0.25}>
             <BuyZones zones={result.zones} mode={mode} />
