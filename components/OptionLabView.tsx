@@ -239,7 +239,7 @@ export default function OptionLabView() {
                     />
                   </div>
                   <div className="mt-2 text-[10px] text-muted-foreground">
-                    {gex.contracts_loaded} contracts · source {gex.source}
+                    {gex.contracts_loaded} contracts · <SourceLabel source={gex.source} />
                   </div>
                 </>
               ) : (
@@ -313,6 +313,23 @@ function Stat({
       <div className={`tabular-nums font-bold ${accent ?? 'text-foreground'}`}>{value}</div>
     </div>
   );
+}
+
+function SourceLabel({ source }: { source: string }) {
+  if (source === 'alpaca-volume-proxy') {
+    return (
+      <span
+        className="text-amber-400 cursor-help"
+        title="Alpaca's free indicative feed has no Open Interest. GEX uses daily volume as a proxy weight — wall positions remain reliable, but the absolute GEX value reflects intraday flow rather than accumulated positioning."
+      >
+        Alpaca · Volume-weighted ⓘ
+      </span>
+    );
+  }
+  if (source === 'alpaca') return <>Alpaca · OI-weighted</>;
+  if (source === 'polygon') return <>Polygon · OI-weighted</>;
+  if (source === 'yfinance') return <>yfinance</>;
+  return <>source {source}</>;
 }
 
 function SkeletonBlock({ height }: { height: number }) {
