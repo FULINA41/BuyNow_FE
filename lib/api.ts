@@ -1,7 +1,17 @@
 /**
  * API Call Wrapper
  */
-import { AnalysisRequest, AnalysisResponse, OptimizeRequest, OptimizeResponse, PredictModel, PredictResponse } from './types';
+import {
+  AnalysisRequest,
+  AnalysisResponse,
+  GEXResponse,
+  OptimizeRequest,
+  OptimizeResponse,
+  PredictModel,
+  PredictResponse,
+  RecommendationRequest,
+  RecommendationResponse,
+} from './types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
@@ -34,6 +44,47 @@ export async function fetchOptimizedPortfolio(data: OptimizeRequest): Promise<Op
 
   return response.json();
 }
+
+/* ── Option Lab ──────────────────────────────────────────────── */
+
+export async function fetchGexCurve(
+  ticker: string,
+  opts: { maxDaysToExpiry?: number; strikeWindowPct?: number } = {},
+): Promise<GEXResponse> {
+  const params = new URLSearchParams();
+  if (opts.maxDaysToExpiry !== undefined)
+    params.set('max_days_to_expiry', String(opts.maxDaysToExpiry));
+  if (opts.strikeWindowPct !== undefined)
+    params.set('strike_window_pct', String(opts.strikeWindowPct));
+  const qs = params.toString();
+  const url = `${API_URL}/api/v1/options/gex/${encodeURIComponent(ticker)}${qs ? `?${qs}` : ''}`;
+  const response = await fetch(url);
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(error.detail || `HTTP error! status: ${response.status}`);
+  }
+  return response.json();
+}
+
+export async function fetchOptionRecommendation(
+  ticker: string,
+  body: RecommendationRequest = {},
+): Promise<RecommendationResponse> {
+  const response = await fetch(
+    `${API_URL}/api/v1/options/recommend/${encodeURIComponent(ticker)}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    },
+  );
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(error.detail || `HTTP error! status: ${response.status}`);
+  }
+  return response.json();
+}
+
 
 export async function fetchPrediction(
   ticker: string,

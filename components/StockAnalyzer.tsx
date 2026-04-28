@@ -28,7 +28,7 @@ import {
   InputGroupText,
   InputGroupTextarea,
 } from "@/components/ui/input-group"
-import { SearchIcon, Github, PieChart } from 'lucide-react';
+import { SearchIcon, Github, PieChart, Sigma } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
@@ -263,22 +263,41 @@ export default function StockAnalyzer() {
           )}
         </CardContent>
       </Card>
-      <Link href="/portfolio" className="block">
-        <Card className="group cursor-pointer transition-colors hover:border-primary/50">
-          <CardContent className="flex items-center justify-between py-5">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                <PieChart size={20} className="text-primary" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Link href="/portfolio" className="block">
+          <Card className="group cursor-pointer transition-colors hover:border-primary/50 h-full">
+            <CardContent className="flex items-center justify-between py-5">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                  <PieChart size={20} className="text-primary" />
+                </div>
+                <div>
+                  <p className="font-semibold text-foreground">Portfolio Optimizer</p>
+                  <p className="text-sm text-muted-foreground">Optimize allocation across multiple stocks</p>
+                </div>
               </div>
-              <div>
-                <p className="font-semibold text-foreground">Portfolio Optimizer</p>
-                <p className="text-sm text-muted-foreground">Optimize allocation across multiple stocks</p>
+              <span className="text-muted-foreground transition-transform group-hover:translate-x-1">→</span>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/option-lab" className="block">
+          <Card className="group cursor-pointer transition-colors hover:border-emerald-500/50 h-full">
+            <CardContent className="flex items-center justify-between py-5">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10">
+                  <Sigma size={20} className="text-emerald-500" />
+                </div>
+                <div>
+                  <p className="font-semibold text-foreground">Option Lab</p>
+                  <p className="text-sm text-muted-foreground">Sell-Put recommender · GEX wall · DCF · LLM risk filter</p>
+                </div>
               </div>
-            </div>
-            <span className="text-muted-foreground transition-transform group-hover:translate-x-1">→</span>
-          </CardContent>
-        </Card>
-      </Link>
+              <span className="text-muted-foreground transition-transform group-hover:translate-x-1">→</span>
+            </CardContent>
+          </Card>
+        </Link>
+      </div>
       {result && (
         <div className="space-y-6">
           <AnimatedCard delay={0.1}>

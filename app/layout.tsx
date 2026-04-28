@@ -25,7 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
 
           {/* Content container */}
-          <main className="relative z-10 mx-auto min-h-screen max-w-7xl px-4 sm:px-6 lg:px-8 py-12 md:py-24 ">
+          <main className="relative z-10 mx-auto min-h-screen max-w-[1600px] px-4 sm:px-6 lg:px-8 py-12 md:py-24 ">
             <div className="flex flex-col items-center">
               {children}
             </div>
